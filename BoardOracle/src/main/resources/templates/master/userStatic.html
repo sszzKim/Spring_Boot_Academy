@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>사용자 통계 페이지</title>
+<style>
+.menubar {
+	width: 100%;
+	height: auto;
+	background-color: #168;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	text-align: center;
+}
+
+.menubar a:link, a:visited, a:active {
+	color: white;
+	font-weight: bold;
+}
+
+.menubar a {
+	display: block;
+	text-decoration: none;
+}
+
+.menubar .main_menu>li {
+	float: left;
+	width: 20%;
+	height: 100%;
+	line-height: 50px;
+	list-style: none;
+	font-weight: bold;
+	position: relative;
+	margin: 0px;
+}
+
+.menubar .main_menu>li>a:hover {
+	background-color: #f0f6f9;
+	color: #168;
+	font-weight: bold;
+}
+
+.menubar .main_menu .sub_menu {
+	list-style: none;
+	display: none;
+	position: absolute;
+	padding-left: 0;
+	padding-right: 0;
+	background-color: #c7d1db;
+	width: 100%;
+	box-shadow: 0 8 16 0 rgba(0, 0, 0, 2);
+}
+
+.menubar .main_menu>li.hover .sub_menu {
+	display: block;
+}
+
+.sub_menu a {
+	color: black;
+	padding: 8px;
+	text-decoraton: none;
+	display: block;
+}
+
+.sub_menu a:hover {
+	background-color: #4675a4;
+}
+
+.main {
+	margin: 0 auto;
+	margin-top: 100px;
+	padding-top: 100px;
+	text-align: center;
+	width: 60%;
+}
+
+.main_menu .selected {
+	background-color: white;
+	font-weight: bold;
+	color: #168;
+}
+
+table {
+	width: 80%;
+	margin: auto;
+	border-collapse: collapse;
+	background-color: #f7f7f7;
+}
+
+th, td {
+	padding: 10px;
+	border: 1px solid #ddd;
+}
+
+th {
+	background-color: #e0e0e0;
+	font-weight: bold;
+}
+
+tr:nth-child(even) {
+	background-color: #f2f2f2;
+}
+
+tr:hover {
+	background-color: #e9e9e9;
+}
+
+select {
+	padding: 10px;
+	font-size: 16px;
+	background-color: #f7f7f7;
+	border-radius: 10px;
+}
+</style>
+<script>
+	showTable('table1');
+	function showTable(tableId) {
+		var tables = document.getElementsByClassName("data-table");
+		for (var i = 0; i < tables.length; i++) {
+			tables[i].style.display = "none";
+		}
+		document.getElementById(tableId).style.display = "table";
+	}
+</script>
+</head>
+<body>
+	<div class="menubar">
+		<ul class="main_menu">
+			<li><a href="/board/list?page=1">홈으로</a></li>
+			<li><a href="/master/userStatic" class="selected">사용자 통계</a></li>
+			<li><a href="/master/fileManage">첨부파일 관리</a></li>
+			<li><a href="/master/boardManage">게시판 관리</a></li>
+			<li><a href="/master/systemInfo">시스템 정보</a></li>
+		</ul>
+	</div>
+
+	<div class="main">
+		<select onchange="showTable(this.value)">
+			<option value="">사용자통계 선택</option>
+			<option value="table1" selected>게시글 수</option>
+			<option value="table2">댓글 수</option>
+			<option value="table3">좋아요 수</option>
+			<option value="table4">싫어요 수</option>
+			<option value="table5">직업 수</option>
+		</select><br><br>
+
+		<table id="table1" class="data-table">
+			<th>아이디</th>
+			<th>사용자명</th>
+			<th>작성한 게시글 수</th>
+			<tr th:each="view,index:${board}">
+				<td th:text="${view.userid}"></td>
+				<td th:text="${view.username}"></td>
+				<td th:text="${view.count}"></td>
+			</tr>
+		</table>
+
+		<table id="table2" class="data-table" style="display: none;">
+			<th>아이디</th>
+			<th>사용자명</th>
+			<th>작성한 댓글 수</th>
+			<tr th:each="view,index:${reply}">
+				<td th:text="${view.userid}"></td>
+				<td th:text="${view.username}"></td>
+				<td th:text="${view.count}"></td>
+			</tr>
+		</table>
+
+		<table id="table3" class="data-table" style="display: none;">
+			<th>글번호</th>
+			<th>글쓴이</th>
+			<th>제목</th>
+			<th>좋아요수</th>
+			<tr th:each="view,index:${likecnt}">
+				<td th:text="${view.seqno}"></td>
+				<td th:text="${view.writer}"></td>
+				<td th:text="${view.title}"></td>
+				<td th:text="${view.likecnt}"></td>
+			</tr>
+		</table>
+
+		<table id="table4" class="data-table" style="display: none;">
+			<th>글번호</th>
+			<th>글쓴이</th>
+			<th>제목</th>
+			<th>싫어요수</th>
+			<tr th:each="view,index:${dislikecnt}">
+				<td th:text="${view.seqno}"></td>
+				<td th:text="${view.writer}"></td>
+				<td th:text="${view.title}"></td>
+				<td th:text="${view.likecnt}"></td>
+			</tr>
+		</table>
+
+		<table id="table5" class="data-table" style="display: none;">
+			<th>직업</th>
+			<th>수(명)</th>
+			<tr th:each="view,index:${job}">
+				<td th:text="${view.job}"></td>
+				<td th:text="${view.count}"></td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.board.mapper.BoardMapper"> <!-- 실제 프로젝트 경로 맞춰줘야 한다. -->
+
+	<!-- 게시물 목록 보기 -->
+	<select id="list" parameterType="HashMap" resultType="com.board.dto.BoardDTO">
+		select seq, seqno, writer, title, regdate, hitno 
+		from (
+              select row_number() over(order by seqno desc) as seq, seqno, writer, title, regdate, hitno
+              from tbl_board
+              where writer like '%'||#{keyword}||'%' or
+              title like '%'||#{keyword}||'%' or
+		      content like '%'||#{keyword}||'%'
+              ) tbl_board
+		where seq between #{startPoint} and #{endPoint} 
+	</select>
+	
+	<!-- 게시물 내용 보기 -->
+	<select id="view" parameterType="int" resultType="com.board.dto.BoardDTO">
+		select seqno, userid, writer, title, regdate, hitno, content, likecnt, dislikecnt
+		 from tbl_board where seqno=#{seqno}
+	</select>
+	
+	<!-- 게시물 등록 하기 -->
+	<!-- insert 시 문자열 싱클쿼테이션 필요없음 -->
+	<insert id="write" parameterType="com.board.dto.BoardDTO">
+		insert into tbl_board ( seqno, userid,writer, title, content) values 
+		(#{seqno}, #{userid},#{writer},#{title},#{content})
+	</insert>
+	
+	<!-- 게시물 수정 하기 -->
+	<update id="modify" parameterType="com.board.dto.BoardDTO">
+		update tbl_board set writer=#{writer}, title=#{title}, 
+		content=#{content} where seqno = #{seqno}
+	</update>
+	
+	<!-- 게시물 삭제 하기 -->
+	<delete id="delete" parameterType="int">
+		delete from tbl_board where seqno = #{seqno}
+	</delete>
+	
+	<!-- 게시물 번호 구하기(시퀀스의 nextval을 사용) -->
+	<select id="getSeqnoNextval" resultType="int" >
+		select tbl_board_seq.nextval as seqno from dual
+	</select>
+		
+	<!-- hitno update -->
+	<update id="hitNoUpdate" parameterType="int"> 
+		update tbl_board set hitno = (select nvl(hitno, 0) from tbl_board 
+		where seqno = #{seqno})+1 where seqno = #{seqno}
+	</update>
+		
+	<!-- Pre Seqno xml내에 '<','>' 처리 시 <![CDATA[ 필수 -->	
+	<select id="pre_seqno" parameterType="HashMap" resultType="int">
+		<![CDATA[
+		select nvl(min(seqno), 0) as pre_seqno from tbl_board 
+		where seqno > #{seqno}
+		and ( writer like '%' || #{keyword} || '%' or
+		title like '%' ||#{keyword} || '%' or
+		content like '%' || #{keyword} || '%' )
+		]]>
+	</select>
+	
+	<!-- Next Seqno -->	
+	<select id="next_seqno" parameterType="HashMap" resultType="int">
+		<![CDATA[
+		select nvl(max(seqno), 0) as next_seqno from tbl_board 
+		where seqno < #{seqno}
+		and ( writer like '%' || #{keyword} || '%' or
+		title like '%' ||#{keyword} || '%' or
+		content like '%' || #{keyword} || '%' )
+		]]>
+	</select>	
+	
+	<!-- 게시물 total count -->
+	<select id="totalcount" parameterType="HashMap" resultType="int">
+		select count(*) 
+		from tbl_board
+		where writer like '%' || #{keyword} || '%' or
+		title like '%' ||#{keyword} || '%' or
+		content like '%' || #{keyword} || '%'
+	</select>
+	
+	<!-- 게시물 싫어용 좋아용 update  -->
+	<update id="boardLikeUpdate" parameterType="com.board.dto.BoardDTO" >
+		update tbl_board set likecnt = #{likecnt}, dislikecnt = #{dislikecnt} where seqno =  #{seqno} 
+	</update>
+	
+	<!-- ######################## 파일 ######################## -->
+	
+	<!-- 파일 등록 하기 -->
+	<insert id="fileUpload" parameterType="HashMap">
+		insert into tbl_file ( fileseqno, seqno, org_filename, stored_filename, filesize, userid, checkfile) values 
+		( tbl_file_seq.nextval, #{seqno}, #{org_filename}, #{stored_filename}, #{filesize}, #{userid}, #{checkfile} )
+	</insert>
+	
+	<!-- 파일 select -->
+	<select id="getFile" parameterType="int" resultType="com.board.dto.FileDTO">
+		SELECT * FROM tbl_file WHERE fileseqno = #{fileseqno}
+	</select>
+	
+	<!-- 첨부파일 List 가져오기 -->
+	<select id="getFileList" parameterType="int" resultType="com.board.dto.FileDTO">
+		SELECT * FROM tbl_file WHERE seqno = #{seqno} AND checkfile = 'O'
+	</select>
+	
+	<!-- 첨부파일 삭제 update -->
+	<update id="checkfileUpdate" parameterType="int"> 
+		update tbl_file set checkfile = 'X' where seqno = #{seqno}
+	</update>
+	
+	<!-- 게시물 수정 시 파일 정보 수정 checkfile을 X로 변경 -->
+	<update id="deleteFileList" parameterType="int">
+		update tbl_file set checkfile = 'X' where fileseqno = #{fileseqno}
+	</update>
+	
+	<!-- userid로 연결되어 있는 파일리스트 가져오기 -->
+	<select id="getFileListByUserid" parameterType="String" resultType="com.board.dto.FileDTO">
+		select f.*
+		from tbl_board b, tbl_file f
+		where  b.userid = #{userid}
+		and b.seqno = f.seqno
+		and f.checkfile = 'O'
+	</select>
+	
+	<!-- ######################## 좋아요 싫어요 ######################## -->
+	
+	<!-- 좋아요 싫어요 등록여부 확인 -->
+	<select id="likeCheckView" parameterType="com.board.dto.LikeDTO" resultType="com.board.dto.LikeDTO">
+	select * from tbl_like where seqno = #{seqno} and userid = #{userid}
+	</select>
+	
+	<!-- 좋아요 싫어요 수정 -->
+	<insert id="likeCheckRegistry" parameterType="com.board.dto.LikeDTO" >
+		insert into tbl_like (seqno, userid, mylikecheck, mydislikeckeck, likedate, dislikedate) 
+		values(#{seqno}, #{userid}, #{mylikecheck}, #{mydislikeckeck}, #{likedate}, #{dislikedate})
+	</insert>
+	
+	<!-- 좋아요 싫어요 수정 -->
+	<update id="likeCheckUpdate" parameterType="com.board.dto.LikeDTO" >
+		update tbl_like set mylikecheck = #{mylikecheck}, mydislikeckeck = #{mydislikeckeck},
+		likedate = #{likedate}, dislikedate = #{dislikedate}
+		where seqno =  #{seqno} and userid = #{userid}
+	</update>
+		
+	<!-- ######################## 댓글 ######################## -->
+	
+	<!-- 댓글 List 가져오기 -->
+	<select id="replyView" parameterType="int" resultType="com.board.dto.ReplyDTO">
+		SELECT replyseqno, replywriter, replycontent, to_char(replyregdate,'YYYY-MM-DD HH24:MI:SS') as replyregdate,
+		userid, seqno FROM tbl_reply WHERE seqno = #{seqno} order by replyseqno desc
+	</select>
+	
+	<!-- 댓글 등록 하기 -->
+	<insert id="replyRegistry" parameterType="com.board.dto.ReplyDTO">
+		INSERT INTO tbl_reply (REPLYSEQNO , seqno, replywriter, replycontent, userid, REPLYREGDATE) 
+		VALUES(tbl_reply_seq.nextval, #{seqno}, #{replywriter}, #{replycontent}, #{userid}, sysdate)
+	</insert>
+	
+	<!-- 댓글 수정 하기 -->
+	<update id="replyUpdate" parameterType="com.board.dto.ReplyDTO">
+		UPDATE tbl_reply SET replycontent= #{replycontent} where replyseqno = #{replyseqno}
+	</update>
+	
+	<!-- 댓글 삭제 하기 -->
+	<delete id="replyDelete" parameterType="int">
+		delete from tbl_reply where replyseqno = #{replyseqno}
+	</delete>
+	
+	
+</mapper>

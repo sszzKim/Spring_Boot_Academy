@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>로그인</title>
+<link rel="stylesheet" href="/css/board.css">
+	<style>
+        body {font-family: "나눔고딕", "맑은고딕";}
+        h1{font-family: "HY견고딕"; color: rgb(81, 144, 160);}
+        a:link {color: black;}
+        a:visited {color: black;}
+        a:hover {color: red;}
+        a {text-decoration: none; cursor: hand;}
+
+        .main {
+            text-align: center;
+        	}
+        .topBanner{
+            margin-top: 10px;
+            margin-bottom: 10px;
+            max-width: 500px;
+            height: auto;
+            display: block;
+            margin: auto;
+        	}
+        .login{
+        	width:50%;
+        	height:auto;
+        	margin:auto;
+        	padding:20px, 20px;
+        	background-color:#FFFFFF;
+        	text-align: center;
+        	border: 5px solid gray;
+        	border-radius: 30px;
+        }
+        
+        .userid, .password{
+        	width:80%;
+        	height: 25px;
+        	border: none;
+        	border-bottom: 2px solid #adadad;
+        	outline: none;
+        	color: #636e72;
+        	font-size: 16px;
+        	background: none;
+        	margin-top: 20px;
+        }
+        
+        .bottomText{
+        text-align: center;
+        font-size: 20px;
+        }
+        
+        .btn_login{
+        position:relative;
+        left:40%;
+        transform:translateX(-50%);
+        width: 80%;
+        height:40px;
+        background:linear-gradient(125deg,#81ecec,#6c5ce7,#81ecec);
+        background-position: left;
+        background-size:200%;
+        color:white;
+        font-weight:bold;
+        border:none;
+        cursor:pointer;
+        transition:0.4s;
+        display:inline;
+        }
+  </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/aes.js"></script>
+<script>
+	
+	   window.onload = async()=>{
+		      
+		   const getCookie = (name) =>{
+			   //쿠키 가져 오기
+			   const cookies = document.cookie.split(`; `).map((el)=>el.split('=')); //cookie는 문자열로 구성, ` -> 있는 그대로
+		   		let getItem = [];
+			   
+			   for(let i=0; i<cookies.length; i++){
+				  if(cookies[i][0]===name){
+					  getItem.push(cookies[i][1]);
+					  break;
+				  }
+			   }
+			   
+			   if(getItem.length>0){
+				   return decodeURIComponent(getItem[0]);
+			   }
+		   }//getCookie
+		   
+		   let userid = getCookie('userid');
+		   let password = getCookie('password');
+		   let authkey = getCookie('authkey');
+		   
+		   if(userid !== undefined) { 
+			   document.querySelector('#rememberUserid').checked = true;
+			   document.querySelector('#userid').value = userid;
+			}else{ document.querySelector('#rememberUserid').checked = false; }
+		   
+		   if(password !== undefined) {
+			   document.querySelector('#rememberPassword').checked = true;
+			   
+			   //64인코딩 된 -> 디코딩
+			   const decrypt = CryptoJS.enc.Base64.parse(password);
+			   const hashData = decrypt.toString(CryptoJS.enc.Utf8);
+			   password = hashData;
+			   document.querySelector('#password').value = password;
+		   }else{ document.querySelector('#rememberPassword').checked = false; }
+		   
+		   //자동 로그인 처리
+		   if(authkey !== undefined){
+			   
+			   //alert("자동로그인");
+			   
+			   let formData = new FormData(); //자동으로 직렬화
+			   formData.append("authkey",authkey);
+			   
+			   await fetch('/member/login?autologin=PASS',{
+				 method: "POST",
+				 body: formData
+			   }).then((res)=>res.json())
+			   .then((data)=>{ //익명함수 처리
+				   if(data.message === 'GOOD'){
+					   console.log("data.pwchangeflag: "+data.pwchangeflag);
+					   if(data.pwchangeflag != '0'){
+							var input = confirm("비밀번호 변경이"+ data.pwchangeflag +"일 경과되었습니다. 비밀번호 변경하시겠습니까? 취소를 누르면 30일 이후 다시 알림이 울립니다.");
+							if(input === true){
+								document.location.href="/member/memberPasswordModify";
+							}else{
+								document.location.href="/member/getPwCheckNotice";
+							}
+						}else{document.location.href='/board/list?page=1';}
+				   }else{alert('자동로그인 불가!');}
+			   }).catch((error)=>{
+					console.log("error="+error);
+				})
+			   //await
+			   
+		   }//if end
+	   }//window.onload 
+	
+		const loginCheck = async() => {
+
+			//그놈의 유효성검사
+			const userid = document.querySelector("#userid");
+			const password = document.querySelector("#password");
+			//const authkey = '12345';
+			
+			if(userid.value === ''){
+				alert("id 넣어");
+				userid.focus();
+				return false;
+			}
+			
+			if(password.value === ''){
+				alert("password 넣어");
+				password.focus()
+				return false;
+			}
+			
+			let formData = new FormData();
+			formData.append("userid", userid.value);
+			formData.append("password", password.value);
+			//formData.append("authkey", "");
+			
+			await fetch('/member/login?autologin=NEW',{
+				method:"POST",
+				body:formData
+			}).then((res)=> res.json())
+				.then((data) => {
+					if(data.message == 'GOOD'){
+							cookieManage(userid.value, password.value, data.authkey);
+							if(data.pwchangeflag != '0'){
+								var input = confirm("비밀번호 변경이"+ data.pwchangeflag +"일 경과되었습니다. 비밀번호 변경하시겠습니까? 취소를 누르면 30일 이후 다시 알림이 울립니다.");
+								if(input === true){
+									document.location.href="/member/memberPasswordModify";
+								}else{
+									document.location.href="/member/getPwCheckNotice";
+								}
+							}
+							else{document.location.href='/board/list?page=1';}
+						}
+					else if(data.message == 'ID_NOT_FOUND'){msg.innerHTML="존재하지 않는 아이디";}
+					else if(data.message == 'PASSWORD_NOT_FOUND'){msg.innerHTML="잘못된 비번";}
+					else {alert("시스템 장애로 로그인 실패");}
+				}).catch((error)=>{
+					console.log("error="+error);
+				})
+			
+			//document.loginForm.action = '/member/login';
+			//document.loginForm.submit();
+		}
+		
+		//email 체크 관리
+		const checkRememberUserid = () => {
+			if(document.querySelector('#rememberUserid').checked) 
+				document.querySelector('#rememberMe').checked = false;
+		}
+		
+		//password 체크 관리
+		const checkRememberPassword = () => {
+			if(document.querySelector('#rememberPassword').checked) 
+				document.querySelector('#rememberMe').checked = false;
+		}
+		
+		//자동로그인 체크 관리
+		const checkRememberMe = () => {
+			if(document.querySelector('#rememberMe').checked)
+			{
+				document.querySelector('#rememberUserid').checked = false;
+				document.querySelector('#rememberPassword').checked = false;
+			}
+		}
+		
+		//쿠키 관리
+		const cookieManage = (userid, password, authkey)=> {
+			if(rememberUserid.checked){document.cookie = 'userid='+userid+'; path=/; expires=Sun, 31, Dec 2023 23:59:59 GMT';}
+			else{document.cookie = 'userid='+userid+'; path=/; max-age=0';}
+			
+			//Base64(양방향 복호화)로 패스워드 인코딩
+			const key = CryptoJS.enc.Utf8.parse(password); //key 생성
+			const base64 = CryptoJS.enc.Base64.stringify(key);
+			password = base64;
+			
+			if(rememberPassword.checked){document.cookie = 'password='+password+'; path=/; expires=Sun, 31, Dec 2023 23:59:59 GMT';}
+			else{document.cookie = 'password='+password+'; path=/; max-age=0';}
+			
+			if(rememberMe.checked){document.cookie = 'authkey='+authkey+'; path=/; expires=Sun, 31, Dec 2023 23:59:59 GMT';}
+			else{document.cookie = 'authkey='+authkey+'; path=/; max-age=0';}
+		}
+		
+		const press=()=>{
+			if(event.keyCode == 13)loginCheck();
+		}
+	</script>
+		
+</head>
+<body>
+
+	<script>
+		if('[[${session.userid}]]'.length != 0){ //0이면 null
+			document.location.href='/board/list?page=1';
+		}
+	</script>
+	
+	<div class="main">
+		<div class="topBanner">
+			<img class="topBanner" src="/images/logo.jpg" title="서울기술교육센터">
+		</div>
+		<div class="login">
+			<h1>login</h1>
+			<form name="loginForm" id="loginForm"  method="post">
+				<input type="text" class="userid" name="userid" id="userid" placeholder="please, ID"/><br><br>
+				<input type="password" class="password" name="password" id="password" placeholder="please, Password" onkeydown="press()"/>
+				<p id="msg" style="color:red; text-align:center"></p><br>
+				<input type="checkbox" name="rememberUserid" id="rememberUserid" onclick="checkRememberUserid()"/>아이디 기억
+				<input type="checkbox" name="rememberPassword" id="rememberPassword" onclick="checkRememberPassword()"/>패스워드 기억
+				<input type="checkbox" name="rememberMe" id="rememberMe" onclick="checkRememberMe()"/>자동 로그인
+				<br><br>
+				<input type="button" id="btn_login" class="btn_login" value="login" onclick="loginCheck()">
+			</form>
+			<div class="bottomText">사용자가 아니면 [ <a href="/member/signup">여기</a> ]를 눌러 등록<br><br><br>
+			  [<a href = "/member/searchID" oneMouseover="this.style.backgroound='pink'; this.style.textDecoration='underline';"
+            onmouseout="this.style.background='white'; this.style.textDecoration='none';">아이디</a> |
+        <a href = "/member/searchPassword" oneMouseover="this.style.backgroound='pink'; 
+                    this.style.textDecoration='underline';"
+            onmouseout="this.style.background='white'; this.style.textDecoration='none';">비밀번호 찾기</a>] <br><br>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

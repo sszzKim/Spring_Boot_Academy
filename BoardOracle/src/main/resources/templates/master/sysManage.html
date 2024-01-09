@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title></title>
+<link rel="stylesheet" href="/css/board.css">
+<style>
+	.menubar {
+		width: 100%;
+		height: auto;
+		background-color: #168;
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		text-align: center;
+	}
+	
+	.menubar a:link, a:visited, a:active {
+	color: white;
+	font-weight: bold;
+	}
+	
+	.menubar a {
+	display: block;
+	text-decoration: none;
+	}
+	
+	.menubar .main_menu > li {
+	float: left;
+	width: 20%;
+	height: 100%;
+	line-height: 50px;
+	list-style: none;
+	font-weight: bold;
+	position: relative;
+	margin: 0px;
+	}
+	
+	.menubar .main_menu > li > a:hover {
+	background-color: #f0f6f9;
+	color: #168;
+	font-weight: bold;
+	}
+	
+	.menubar .main_menu .sub_menu {
+	list-style: none;
+	display: none;
+	position: absolute;
+	padding-left: 0;
+	padding-right: 0;
+	background-color: #c7d1db;
+	width: 100%;
+	box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+	}
+	
+	.main_menu li:hover .sub_menu {
+	display: block;
+	}
+	
+	.sub_menu a {
+	color: block;
+	padding: 8px;
+	text-decoration: none;
+	display: block;
+	}
+	
+	.sub_menu a:hover {
+	background-color: #4675a4;
+	}
+	
+	.main {
+	  text-align: center;
+	  margin-top: 100px;
+	  padding-top: 20px;
+	}
+</style>
+
+<script>
+</script>
+
+</head>
+
+<body>
+
+<div class="menubar">
+	<ul class="main_menu">
+		<li><a href="/board/list?page=1">홈으로</a></li>
+		<li><a href="/matser/UserStatic">사용자 통계</a></li>
+		<li><a href="/master/fileDelete">첨부파일 관리</a></li>
+		<li><a href="/master/boardManage">게시판 관리</a></li>
+		<li><a href="/master/sysInfo">시스템 정보</a></li>
+	</ul>
+</div>
+
+
+<div class="main">
+<h1>[[${serverinfo}]]</h1>
+</div>
+
+</body>
+</html>

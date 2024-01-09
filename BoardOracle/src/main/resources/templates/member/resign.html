@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>회원 탈퇴</title>
+<link rel="stylesheet" href="/css/board.css">
+<style>
+.passwordModify{
+ 	width:50%;
+ 	height:auto;
+ 	margin:auto;
+ 	padding:20px, 20px;
+ 	background-color:#FFFFFF;
+ 	text-align: center;
+ 	border: 5px solid gray;
+ 	border-radius: 30px;
+ }
+ 
+ .userid, .password{
+ 	width:80%;
+ 	height: 25px;
+ 	border: none;
+ 	border-bottom: 2px solid #adadad;
+ 	outline: none;
+ 	color: #636e72;
+ 	font-size: 16px;
+ 	background: none;
+ 	margin-top: 20px;
+ }
+ 
+ .bottomText{
+ text-align: center;
+ font-size: 20px;
+ }
+ 
+ .btn_login{
+ position:relative;
+ left:40%;
+ transform:translateX(-50%);
+ width: 80%;
+ height:40px;
+ background:linear-gradient(125deg,#81ecec,#6c5ce7,#81ecec);
+ background-position: left;
+ background-size:200%;
+ color:white;
+ font-weight:bold;
+ border:none;
+ cursor:pointer;
+ transition:0.4s;
+ display:inline;
+ }
+ 
+ input[type="button"] {
+	padding: 10px 20px;
+	background-color: #4CAF50;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 14px;
+}
+
+input[type="button"]:hover {
+	background-color: #45a049;
+}
+
+.btn_cancel {
+	background-color: gray;
+}
+.topBanner {
+	margin-top: 10px;
+	margin-bottom: 10px;
+	max-width: 500px;
+	height: 200px;
+	display: block;
+	margin: auto;
+}
+</style>
+</head>
+<body>
+<div class="main">
+	<div class="topBanner">
+		<img class="topBanner" src="/images/logo.jpg" id="logoImg" title="서울기술교육센터">
+	</div>
+	<div class="passwordModify">
+		<h1>회원 탈퇴</h1>
+		<input type="password" class="input_field" id="pwd" name="pwd" placeholder="비밀번호를 입력해 주세요" >
+		<div class ="bottom_menu">
+			<input type="button" id="btnPasswordModify" class="btn_modify" value="회원 탈퇴" onclick="resign()" />
+			<input type="button" id="btnRegister" class="btn_cancel" style="background-color:gray;" value="취소" onclick="history.back()" />
+		</div>
+	</div>
+</div>
+</body>
+<script>
+
+window.onload=()=>{
+	//로고띄우기
+	//alert("localStorage.getItem('logoSrc') :"+localStorage.getItem('logoSrc') );
+	if(localStorage.getItem('logoSrc') != null){
+		logoImg.src="/logo/"+localStorage.getItem('logoSrc');
+	}
+}
+
+const resign=async()=>{
+	  
+   const pwdVal = pwd.value;
+	
+	if(pwdVal==''){alert('비밀번호를 입력하세요.'); pwd.focus(); return false;}
+	
+	const dataform = {
+			password : pwdVal
+	};
+		
+	await fetch('/member/resign',{
+		method: "POST",
+		headers: {"content-type":"application/json"},
+       body: JSON.stringify(dataform)
+	}).then((response)=>response.json())
+	  .then((data)=>{	
+		  if(data.message==='GOOD'){
+			  //쿠키 삭제
+			  document.cookie = 'userid=; path=/; max-age=0';
+  			  document.cookie = 'password=; path=/; max-age=0';
+  			  document.cookie = 'authkey=; path=/; max-age=0';
+			  alert('회원탈퇴 성공, 로그인페이지로 돌아갑니다.');
+			  document.location.href='/';
+		  }else if(data.message==='MISMATCH'){
+			  alert('비밀번호 틀림');
+			  return;
+		  }
+	}).catch((error)=> {
+        console.log("error = " + error);
+    });//await
+	
+}
+
+</script>
+</html>

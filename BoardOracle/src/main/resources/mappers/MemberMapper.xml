@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.board.mapper.MemberMapper"> <!-- 실제 프로젝트 경로 맞춰줘야 한다. -->
+
+	<!-- 회원가입 구현 -->
+    <insert id="signUpMember" parameterType="com.board.dto.MemberDTO">
+		INSERT INTO tbl_member ( userid, username, password, job, gender, hobby, telno, email,
+		zipcode, address, description, lastpwdate, pwdchk, role, org_filename,stored_filename, filesize ) 
+		VALUES (#{userid}, #{username}, #{password}, #{job}, #{gender}, #{hobby}, #{telno}, #{email},
+		#{zipcode}, #{address}, #{description}, #{lastpwdate}, #{pwdchk}, #{role}, #{org_filename},
+		#{stored_filename}, #{filesize})
+	</insert>
+	
+	<!-- 아이디 중복 확인 -->
+	<select id="idCheck" parameterType="String" resultType="int">
+		select count(*) from tbl_member where userid = #{userid}
+	</select>
+	
+	<!-- 마지막 로그인 날짜 업데이트 -->
+	<update id="lastlogindateUpdate" parameterType="String">
+		update tbl_member set lastlogindate = sysdate where userid = #{userid}
+	</update>
+	
+	<!-- 마지막 로그인아웃 날짜 업데이트-->
+	<update id="lastlogoutdateUpdate" parameterType="String" >
+		update tbl_member set lastlogoutdate = sysdate where userid = #{userid}
+	</update>
+	
+	<!-- 멤버정보 가져오기 -->
+	<select id="memberInfo" parameterType="String" resultType="com.board.dto.MemberDTO">
+		select * from tbl_member where userid = #{userid}
+	</select>
+	
+	<!-- 멤버정보 수정 -->
+	<update id="memberInfoModify" parameterType="com.board.dto.MemberDTO">
+		update tbl_member 
+        set job=#{job}, gender=#{gender}, hobby=#{hobby}, telno=#{telno}, email=#{email},
+        zipcode=#{zipcode}, address=#{address}, description=#{description}, org_filename=#{org_filename},
+        stored_filename=#{stored_filename}, filesize=#{filesize}
+        where userid = #{userid}
+	</update>
+	
+	<!-- 아이디 찾기 멤버정보 가져오기 -->
+	<select id="searchID" parameterType="com.board.dto.MemberDTO" resultType="String">
+		select userid from tbl_member where username = #{username} and telno = #{telno} 
+	</select>
+	
+	<!-- authkey -->
+	<update id="authkeyUpdate" parameterType="com.board.dto.MemberDTO" >
+		update tbl_member set authkey = #{authkey} where userid = #{userid}
+	</update>
+	
+	<!-- authkey count select -->
+	<select id="authkeyExists" parameterType="com.board.dto.MemberDTO" resultType="com.board.dto.MemberDTO">
+		select * from tbl_member where authkey = #{authkey} 
+	</select>
+	
+	<!-- 비밀번호 수정 -->
+	<update id="pwdModify" parameterType="com.board.dto.MemberDTO" >
+		update tbl_member set password = #{password}, authkey = '', lastpwdate= #{lastpwdate} where userid = #{userid}
+	</update>
+		
+	<!-- 비밀번호 찾기 중 userid, email로 멤버 찾기 -->
+	<select id="findMemberByUseridEmail" parameterType="com.board.dto.MemberDTO" resultType="com.board.dto.MemberDTO" >
+		select * from tbl_member where userid = #{userid} and email = #{email}
+	</select>
+	
+	<!-- 회원탈퇴  -->
+	<delete id="deleteMember" parameterType="String">
+		delete from tbl_member where userid = #{userid}
+	</delete>
+	
+	<!-- 우편번호 검색 -->
+	<select id="addrSearch" parameterType="HashMap" resultType="com.board.dto.AddressDTO">
+		SELECT zipcode, province, road, building, oldaddr
+		FROM (
+			select zipcode, province, road, building, oldaddr, row_number() over(order by zipcode) as rnum
+			from tbl_addr WHERE road like '%' || #{keyword} || '%' OR building like '%' || #{keyword} || '%') addr
+		WHERE rnum between #{startPoint} and #{endPoint} order by zipcode
+	</select>
+	
+	<!-- 우편번호 행 최대 갯수 검색 -->
+	<select id="addrTotalCount" parameterType="String" resultType="int">
+		SELECT count(*)
+		FROM tbl_addr
+		WHERE road like '%' || #{keyword} || '%' 
+		   OR building like '%' || #{keyword} || '%' 
+	</select>
+	
+	<!-- pwkchk update -->
+	<update id="pwkchkUpdate" parameterType="String">
+		update tbl_member set pwdchk = (select pwdchk from tbl_member where userid = #{userid})+1 where userid = #{userid}
+	</update>
+	
+</mapper>

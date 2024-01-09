@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.board.mapper.MasterMapper">
+
+	<select id="getDltTrgtFile" resultType="com.board.dto.FileDTO">
+		select * from tbl_file where checkfile = 'X'
+	</select>
+	
+	<delete id="deleteByFileseqno" parameterType="int">
+		delete from tbl_file where fileseqno = #{fileseqno}
+	</delete>
+	
+	<resultMap id="ResultMap_01" type="HashMap">
+	    <id property="userid" column="userid" />
+	    <result property="username" column="username" />
+	    <result property="count" column="board_count" />
+	</resultMap>
+	
+	<resultMap id="ResultMap_02" type="HashMap">
+	    <id property="seqno" column="seqno" />
+	    <result property="writer" column="writer" />
+	    <result property="title" column="title" />
+	    <result property="likecnt" column="likecnt" />
+	</resultMap>
+	
+	<resultMap id="ResultMap_03" type="HashMap">
+	    <id property="job" column="job" />
+	    <result property="count" column="job_count" />
+	</resultMap>
+
+	<!-- 게시물 수 많이 쓴 사용자 TOP 5 -->
+	<select id="boardCountGroupbyUseridTOP5" resultMap="ResultMap_01">
+	 <![CDATA[ 
+		select userid, username, board_count
+		from
+		(select m.userid, m.username, count(b.seqno) as board_count
+		from tbl_member m left join tbl_board b ON m.userid = b.userid 
+		group by m.userid, m.username order by board_count DESC)
+		where ROWNUM <= 5
+	]]>
+	</select>
+	
+	<!-- 댓글 많이 쓴 사용자 TOP 5 -->
+	<select id="replyCountGroupbyUseridTOP5" resultMap="ResultMap_01">
+	<![CDATA[ 
+		select userid, replywriter as username, reply_count as board_count
+		from (
+		select userid, replywriter, count(*) as reply_count
+		from tbl_reply
+		group by userid, replywriter
+		order by reply_count desc )
+		where ROWNUM <= 5
+	]]>
+	</select>
+	
+	<!-- 좋아요 많은 게시글 TOP 5 -->
+	<select id="boardByLikecntTOP5" resultMap="ResultMap_02">
+		SELECT seqno, writer, title, likecnt
+		FROM 
+		 (SELECT b.*,  
+		  ROW_NUMBER () OVER (ORDER BY nvl(likecnt,0) DESC) rnum
+		 FROM tbl_board b) bb
+		WHERE rnum BETWEEN 1 AND 5
+		order by bb.likecnt desc
+	</select>
+	
+	<!-- 싫어요 많은 게시글 TOP 5 -->
+	<select id="boardByDislikecntTOP5" resultMap="ResultMap_02">
+		SELECT seqno, writer, title, dislikecnt as likecnt
+		FROM 
+		 (SELECT b.*,  
+		  ROW_NUMBER () OVER (ORDER BY nvl(dislikecnt,0) DESC) rnum
+		 FROM tbl_board b) bb
+		WHERE rnum BETWEEN 1 AND 5
+		order by bb.dislikecnt desc
+	</select>
+	
+	<select id="countGroupbyJobTOP5" resultMap="ResultMap_03">
+	<![CDATA[ 
+		select job, job_count
+		from
+		(select job, count(*) as job_count
+		from tbl_member
+		group by job
+		order by job_count desc) 
+		where ROWNUM <= 5
+	]]>
+	</select>
+	
+
+	
+</mapper>

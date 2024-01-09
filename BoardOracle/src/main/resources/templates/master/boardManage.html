@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>게시판관리</title>
+<link rel="stylesheet" href="/css/board.css">
+<style>
+.menubar {
+	width: 100%;
+	height: auto;
+	background-color: #168;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	text-align: center;
+}
+
+.menubar a:link, a:visited, a:active {
+	color: white;
+	font-weight: bold;
+}
+
+.menubar a {
+	display: block;
+	text-decoration: none;
+}
+
+.menubar .main_menu>li {
+	float: left;
+	width: 20%;
+	height: 100%;
+	line-height: 50px;
+	list-style: none;
+	font-weight: bold;
+	position: relative;
+	margin: 0px;
+}
+
+.menubar .main_menu>li>a:hover {
+	background-color: #f0f6f9;
+	color: #168;
+	font-weight: bold;
+}
+
+.menubar .main_menu .sub_menu {
+	list-style: none;
+	display: none;
+	position: absolute;
+	padding-left: 0;
+	padding-right: 0;
+	background-color: #c7d1db;
+	width: 100%;
+	box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+}
+
+.main_menu li:hover .sub_menu {
+	display: block;
+}
+
+.sub_menu a {
+	color: block;
+	padding: 8px;
+	text-decoration: none;
+	display: block;
+}
+
+.sub_menu a:hover {
+	background-color: #4675a4;
+}
+
+.main {
+	width: 60%;
+    margin: 0 auto;
+   	margin-top: 100px;
+	padding-top: 20px;
+    
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+th, td {
+	padding: 10px;
+	text-align: left;
+	border-bottom: 1px solid #ddd;
+}
+
+th {
+	background-color: #f2f2f2;
+	font-weight: bold;
+}
+
+input[type="file"] {
+	display: block;
+	margin-top: 10px;
+}
+
+select {
+	width: 100%;
+	padding: 5px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	background-color: #fff;
+	font-size: 14px;
+}
+
+input[type="text"] {
+	width: 100%;
+	padding: 5px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 14px;
+}
+
+.main_menu .selected {
+	background-color:white;
+	font-weight: bold;
+	color: #168;
+}
+
+</style>
+</head>
+<body>
+<div class="menubar">
+	<ul class="main_menu">
+		<li><a href="/board/list?page=1">홈으로</a></li>
+			<li><a href="/master/userStatic">사용자 통계</a></li>
+			<li><a href="/master/fileManage">첨부파일 관리</a></li>
+			<li><a href="/master/boardManage" class="selected">게시판 관리</a></li>
+			<li><a href="/master/systemInfo">시스템 정보</a></li>
+	</ul>
+</div>
+
+<div class="main">
+      <form id="noForm">
+		<table>
+			<tr>
+				<th>화면에 보여지는 게시물 행의 갯수</th>
+				<td><select id="selectBox" name="selectBox">
+						<option value="">--Please choose an option--</option>
+				</select></td>
+			</tr>
+			<tr>
+				<th>로고 화면 이미지</th>
+				<td><input type="file" id="logoFile" name="logoFile"></td>
+			</tr>
+		</table>
+	</form>
+</div>
+
+</body>
+
+<script>
+
+    var selectBox = document.getElementById("selectBox");
+    for (var i = 5; i <= 100; i += 5) {
+        var option = document.createElement("option");
+        option.value = i;
+        option.text = i;
+        selectBox.appendChild(option);
+    }
+    
+    //화면에 보여지는 게시물 행의 갯수 선택
+    selectBox.addEventListener('change',async()=>{
+    	sendForm();
+	});//selectBox.addEventListener END
+	
+	//로고이미지 저장
+	logoFile.addEventListener('change', async() => {
+		sendForm();
+	});//logoFile.addEventListener END
+	
+	const sendForm=async()=>{
+		
+		let formData = new FormData(noForm); //자동으로 직렬화
+				
+		await fetch('/master/boardManage',{
+		 	method: "POST",
+	        body: formData
+	   }).then((res)=>res.json())
+	   .then((data)=>{ 
+		   if(data.message === 'GOOD'){
+			   alert('수정이 완료되었습니다.');
+			   if(data.fileFlag == 'O'){
+			   		localStorage.setItem('logoSrc', data.logoSrc);
+		   		}
+			   //alert("???:"+localStorage.getItem('logoSrc'));
+			   document.location.href='/';
+			}else{
+				alert('수정이 실패하였습니다.');
+			}
+	   }).catch((error)=>{
+			console.log("error="+error);
+		});//fetch END
+		
+	};
+	
+	
+	
+	
+</script>
+</html>
